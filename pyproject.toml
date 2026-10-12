@@ -1,13 +1,17 @@
 [project]
 name = "audio-transcribe"
-version = "0.2.0"
+version = "0.2.1"
 description = "Transcribe audio files with faster-whisper"
 requires-python = ">=3.10"
-dependencies = ["faster-whisper>=1.2.1,<2", "huggingface-hub>=0.34,<2"]
+dependencies = [
+    "av>=11,<18",
+    "faster-whisper>=1.2.1,<2",
+    "huggingface-hub>=0.34,<2",
+]
 
 [project.scripts]
 audio-transcribe = "audio_transcribe:main"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12"]
+requires = ["uv_build>=0.11.28,<0.13"]
 build-backend = "uv_build"
