@@ -66,3 +66,18 @@ reused by ja2zh-srt. `lib.cudaLibraryPath pkgs` supplies the CUDA runtime search
 PyAV is constrained to `<18` because faster-whisper 1.2.x uses its legacy
 `metadata_errors` decoding argument. The installed-environment check decodes a
 real WAV sample to catch decoder API incompatibility.
+
+## Development checks
+
+Ruff, ty and pre-commit are dev dependencies pinned in `uv.lock`. Install the
+Git hook once per clone:
+
+```sh
+uv sync --locked
+uv run --locked pre-commit install
+uv run --locked pre-commit run --all-files
+```
+
+The hooks use the locked tools through uv: lock consistency, Ruff lint fixes,
+Ruff formatting, and a project-wide ty check. Dev dependencies are excluded from
+the deployed application environments.
