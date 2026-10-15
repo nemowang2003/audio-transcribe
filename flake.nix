@@ -5,7 +5,7 @@
     self,
     nixpkgs,
   }: let
-    systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
+    systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
     each-system = nixpkgs.lib.genAttrs systems;
   in {
     lib.mkPackage = {
@@ -25,14 +25,14 @@
         src = self;
         pyproject = true;
         build-system = [python.pkgs.uv-build];
-        dependencies = [faster-whisper python.pkgs.huggingface-hub];
+        dependencies = [faster-whisper python.pkgs.huggingface-hub python.pkgs.filelock];
         nativeBuildInputs = [pkgs.installShellFiles];
         postInstall = "installShellCompletion --zsh _audio-transcribe";
         pythonImportsCheck = ["audio_transcribe"];
         passthru.tests.unit = pkgs.runCommand "audio-transcribe-unit" {} ''
           export PYTHONPATH=${self}/src
           export PYTHONDONTWRITEBYTECODE=1
-          ${python.interpreter} -m unittest discover -s ${self}/tests
+          ${python.withPackages (ps: [ps.filelock])}/bin/python -m unittest discover -s ${self}/tests
           touch "$out"
         '';
       };
@@ -64,7 +64,16 @@
         };
       });
     checks = each-system (system: {unit = self.packages.${system}.default.tests.unit;});
-    devShells = each-system (system: let pkgs = import nixpkgs {inherit system;}; in {default = pkgs.mkShell {packages = [pkgs.uv pkgs.python314];};});
+    devShells = each-system (system: let
+      pkgs = import nixpkgs {inherit system;};
+    in {
+      default = pkgs.mkShell {
+        packages = [pkgs.uv pkgs.python314];
+        env = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [pkgs.stdenv.cc.cc.lib pkgs.zlib];
+        };
+      };
+    });
     formatter = each-system (system: nixpkgs.legacyPackages.${system}.alejandra);
   };
 }

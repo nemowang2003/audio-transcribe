@@ -2,7 +2,10 @@
 
 import json
 import os
+import tempfile
 from pathlib import Path
+
+from filelock import FileLock
 
 DEFAULT_MODEL = "large-v3"
 
@@ -31,17 +34,37 @@ def registered_models() -> dict[str, str]:
     return json.loads(path.read_text()) if path.exists() else {}
 
 
+def validate_model(path: Path) -> Path:
+    if not (path / "model.bin").is_file() or not (path / "config.json").is_file():
+        raise ValueError(f"incomplete Whisper model: {path}")
+    return path.resolve()
+
+
 def register(name: str, path: Path) -> Path:
     path = path.expanduser().resolve()
     if not (path / "model.bin").is_file() or not (path / "config.json").is_file():
         raise ValueError(f"not a CTranslate2 Whisper model directory: {path}")
-    models = registered_models()
-    models[name] = str(path)
     target = registry_path()
     target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_suffix(".tmp")
-    temporary.write_text(json.dumps(models, indent=2) + "\n")
-    temporary.replace(target)
+    with FileLock(str(target) + ".lock"):
+        models = registered_models()
+        models[name] = str(path)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=target.parent,
+                prefix=target.name + ".",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                temporary = Path(handle.name)
+                handle.write(json.dumps(models, indent=2) + "\n")
+            temporary.replace(target)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
     return path
 
 
@@ -55,9 +78,7 @@ def resolve(
     source = registered_models().get(model, model)
     path = Path(source).expanduser()
     if path.is_dir():
-        if not (path / "model.bin").is_file() or not (path / "config.json").is_file():
-            raise ValueError(f"incomplete Whisper model: {path}")
-        return path.resolve()
+        return validate_model(path)
     if source.startswith(("/", "./", "../", "~")):
         raise ValueError(f"Whisper model directory does not exist: {source}")
     from faster_whisper.utils import download_model
@@ -87,4 +108,4 @@ def resolve(
                 ],
             )
         )
-    return resolved
+    return validate_model(resolved)

@@ -35,7 +35,9 @@ with Transcriber("large-v3") as engine:
 batch. `close()` releases the model reference; this SDK does not reserve the GPU
 or coordinate with other applications. Model runtime imports are lazy.
 
-Use `uv sync` / `uv run audio-transcribe`. On Nix, `nix run .#cuda` includes CUDA
+Use `uv sync` / `uv run audio-transcribe`. On NixOS, enter `nix develop` first
+to provide the native libraries required by Python wheels.
+On Nix, `nix run .#cuda` includes CUDA
 runtime libraries; `nix run . -- … --device cpu` uses the portable CPU build.
 CUDA packaging currently supports x86_64 Linux, including NixOS WSL. The flake
 exports `lib.mkPackage { pkgs; python; cudaSupport; }` for consuming the SDK with
@@ -43,4 +45,4 @@ the caller's Python version. Other systems can use explicit CPU; other accelerat
 backends are not implemented yet.
 
 Run `nix flake check`, `nix build .#cuda`, or source unit tests:
-`PYTHONPATH=src uv run --no-project python -m unittest discover -s tests`.
+`uv run python -m unittest discover -s tests`.

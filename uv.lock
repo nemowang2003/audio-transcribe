@@ -27,12 +27,15 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "faster-whisper" },
+    { name = "filelock", version = "4.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "filelock", version = "4.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "huggingface-hub" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "faster-whisper", specifier = ">=1.2.1,<2" },
+    { name = "filelock", specifier = ">=3,<5" },
     { name = "huggingface-hub", specifier = ">=0.34,<2" },
 ]
 
