@@ -41,7 +41,10 @@ On Nix, `nix run .#cuda` includes CUDA
 runtime libraries; `nix run . -- … --device cpu` uses the portable CPU build.
 CUDA packaging currently supports x86_64 Linux, including NixOS WSL. The flake
 exports `lib.mkPackage { pkgs; python; cudaSupport; }` for consuming the SDK with
-the caller's Python version. Other systems can use explicit CPU; other acceleration
+the caller's Python version. Nix packaging reads project metadata, runtime
+dependencies, and build requirements directly from `pyproject.toml` through
+pyproject.nix; package versions come from the locked nixpkgs input.
+Other systems can use explicit CPU; other acceleration
 backends are not implemented yet.
 
 Run `nix flake check`, `nix build .#cuda`, or source unit tests:

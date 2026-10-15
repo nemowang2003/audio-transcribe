@@ -1,12 +1,16 @@
 {
   description = "Whisper model management, transcription CLI and Python SDK";
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs.pyproject-nix.url = "github:pyproject-nix/pyproject.nix";
+  inputs.pyproject-nix.inputs.nixpkgs.follows = "nixpkgs";
   outputs = {
     self,
     nixpkgs,
+    pyproject-nix,
   }: let
     systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
     each-system = nixpkgs.lib.genAttrs systems;
+    project = pyproject-nix.lib.project.loadPyproject {projectRoot = self;};
   in {
     lib.mkPackage = {
       pkgs,
@@ -19,23 +23,26 @@
       };
       ctranslate2 = python.pkgs.ctranslate2.override {inherit ctranslate2-cpp;};
       faster-whisper = python.pkgs.faster-whisper.override {inherit ctranslate2;};
-      sdk = python.pkgs.buildPythonPackage {
-        pname = "audio-transcribe";
-        version = "0.2.0";
-        src = self;
-        pyproject = true;
-        build-system = [python.pkgs.uv-build];
-        dependencies = [faster-whisper python.pkgs.huggingface-hub python.pkgs.filelock];
-        nativeBuildInputs = [pkgs.installShellFiles];
-        postInstall = "installShellCompletion --zsh _audio-transcribe";
-        pythonImportsCheck = ["audio_transcribe"];
-        passthru.tests.unit = pkgs.runCommand "audio-transcribe-unit" {} ''
-          export PYTHONPATH=${self}/src
-          export PYTHONDONTWRITEBYTECODE=1
-          ${python.withPackages (ps: [ps.filelock])}/bin/python -m unittest discover -s ${self}/tests
-          touch "$out"
-        '';
+      attrs = project.renderers.buildPythonPackage {
+        inherit python;
+        pythonPackages = python.pkgs // {inherit faster-whisper;};
       };
+      sdk = python.pkgs.buildPythonPackage (attrs
+        // {
+          nativeBuildInputs = [pkgs.installShellFiles];
+          postInstall = "installShellCompletion --zsh _audio-transcribe";
+          pythonImportsCheck = ["audio_transcribe"];
+          passthru =
+            attrs.passthru
+            // {
+              tests.unit = pkgs.runCommand "audio-transcribe-unit" {} ''
+                export PYTHONPATH=${self}/src
+                export PYTHONDONTWRITEBYTECODE=1
+                ${python.withPackages (_: attrs.dependencies)}/bin/python -m unittest discover -s ${self}/tests
+                touch "$out"
+              '';
+            };
+        });
       runtime-path = pkgs.lib.makeLibraryPath [pkgs.cudaPackages.cuda_cudart pkgs.cudaPackages.libcublas pkgs.cudaPackages.libcurand pkgs.cudaPackages.cudnn];
     in
       sdk.overrideAttrs (old: {
