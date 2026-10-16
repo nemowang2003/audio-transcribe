@@ -40,10 +40,21 @@ to provide the native libraries required by Python wheels.
 On Nix, `nix run .#cuda` includes CUDA
 runtime libraries; `nix run . -- … --device cpu` uses the portable CPU build.
 CUDA packaging currently supports x86_64 Linux, including NixOS WSL. The flake
-exports `lib.mkPackage { pkgs; python; cudaSupport; }` for consuming the SDK with
-the caller's Python version. Nix packaging reads project metadata, runtime
-dependencies, and build requirements directly from `pyproject.toml` through
-pyproject.nix; package versions come from the locked nixpkgs input.
+exports `lib.mkPackage { pkgs; python; cudaSupport; }` using the caller's Python
+version (Python 3.14 by default). Its `virtualenv` attribute provides a Python
+interpreter with the SDK and all runtime dependencies; `sdk` and `pythonSet`
+expose the underlying pyproject.nix package and package set.
+Nix packaging uses uv2nix to read `pyproject.toml` and `uv.lock`, preferring the
+locked wheels. The `build` dependency group also locks `uv_build`; keep its
+version range aligned with `[build-system].requires`. Both uv and Nix therefore use the same Python dependency versions
+and source hashes. `flake.lock` pins nixpkgs, uv2nix, pyproject.nix, and the build
+system packages; these inputs share nixpkgs and pyproject.nix through `follows`.
+
+After changing Python dependencies, run `uv lock` and `nix flake check`.
+Update Nix tooling with `nix flake update`, then run `uv lock --check` and
+`nix flake check` again. Commit the relevant lockfile changes together.
+`nix flake check` checks that `uv.lock` matches the project metadata, runs unit
+tests with the locked Nix environment, and imports the native runtime modules.
 Other systems can use explicit CPU; other acceleration
 backends are not implemented yet.
 
