@@ -2,6 +2,8 @@ import contextlib
 import io
 import tempfile
 import unittest
+import wave
+from array import array
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -11,6 +13,21 @@ from audio_transcribe.sdk import Transcriber, compute_type_for
 
 
 class TranscribeTests(unittest.TestCase):
+    def test_runtime_decodes_and_resamples_audio_without_loading_model(self):
+        from faster_whisper.audio import decode_audio
+
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "录音.wav"
+            with wave.open(str(path), "wb") as output:
+                output.setnchannels(1)
+                output.setsampwidth(2)
+                output.setframerate(8000)
+                output.writeframes(array("h", [1000] * 8000).tobytes())
+            samples = decode_audio(str(path), sampling_rate=16000)
+
+        self.assertEqual(samples.shape, (16000,))
+        self.assertGreater(float(samples.max()), 0)
+
     def test_default_requires_cuda_and_never_falls_back(self):
         args = cli.build_parser().parse_args(["transcribe", "a.wav"])
         self.assertEqual(args.device, "cuda")

@@ -5,6 +5,8 @@ description = "Transcribe audio files with faster-whisper"
 requires-python = ">=3.10"
 dependencies = [
     "faster-whisper>=1.2.1,<2",
+    # faster-whisper 1.2.1 passes metadata_errors, removed in PyAV 19.
+    "av>=11,<19",
     "filelock>=3,<5",
     "huggingface-hub>=0.34,<2",
 ]
