@@ -15,9 +15,9 @@ dependencies = [
 audio-transcribe = "audio_transcribe:main"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12"]
+requires = ["uv_build>=0.13.5,<0.14"]
 build-backend = "uv_build"
 
 # Lock the build backend as well as runtime dependencies for uv2nix.
 [dependency-groups]
-build = ["uv_build>=0.11.28,<0.12"]
+build = ["uv_build>=0.13.5,<0.14"]
