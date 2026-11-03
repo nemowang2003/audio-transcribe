@@ -48,7 +48,7 @@
           })
         ]
       );
-      virtualenv = pythonSet.mkVirtualEnv "audio-transcribe-env" workspace.deps.default;
+      virtualenv = pythonSet.mkVirtualEnv "audio-transcribe-env" {audio-transcribe = [];};
       application = (pkgs.callPackage pyproject-nix.build.util {}).mkApplication {
         venv = virtualenv;
         package = pythonSet.audio-transcribe;

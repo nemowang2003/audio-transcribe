@@ -60,3 +60,38 @@ backends are not implemented yet.
 
 Run `nix flake check`, `nix build .#cuda`, or source unit tests:
 `uv run python -m unittest discover -s tests`.
+
+## Development checks
+
+Development uses Python 3.14 (see `.python-version`) and a uv-managed `.venv`.
+Ruff, ty, pre-commit and the build backend are pinned in `uv.lock`. The default
+`dev` and `build` groups are installed by both `uv sync` and `uv run`:
+
+```sh
+uv sync --locked
+uv run --locked pre-commit install
+uv run --locked pre-commit run --all-files
+```
+
+`pre-commit install` is needed once per clone; subsequent commits run the hooks
+automatically. All hooks use the project's locked tools through uv, including
+ty. `--all-extras` selects optional runtime features, not dependency groups;
+these projects do not need it for development checks.
+
+`.envrc` and direnv are optional conveniences. If Python 3.14 and uv are already
+available, the commands above work directly. On NixOS, enter `nix develop`
+manually when the interpreter or native libraries for audio wheels are needed.
+The shell supplies tools and libraries; it does not create or sync `.venv`.
+If Nix garbage collection removes the interpreter behind an old `.venv`, rerun
+`uv sync --locked` with the current Python available.
+
+To build with the exact backend installed from the lockfile, use:
+
+```sh
+uv build --python .venv/bin/python --no-build-isolation --force-pep517
+```
+
+The backend in the `build` group is not automatically the backend used by an
+isolated build or uv's bundled fast path. Nix builds independently provide the
+locked backend and force PEP 517. Development tools are excluded from production
+Nix environments.

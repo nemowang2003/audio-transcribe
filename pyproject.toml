@@ -21,3 +21,19 @@ build-backend = "uv_build"
 # Lock the build backend as well as runtime dependencies for uv2nix.
 [dependency-groups]
 build = ["uv_build>=0.13.5,<0.14"]
+
+dev = [
+    "pre-commit>=4.6.2",
+    "ruff>=0.17.2",
+    "ty>=0.0.91",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I"]
+ignore = ["E501"]
+
+[tool.uv]
+default-groups = ["dev", "build"]
