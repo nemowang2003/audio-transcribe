@@ -1,4 +1,4 @@
-"""Whisper models: persistent registrations and shared Hugging Face cache."""
+"""Whisper models: persistent registrations and application-owned weights."""
 
 import json
 import os
@@ -14,8 +14,8 @@ def cache_dir() -> Path:
     return Path(
         os.environ.get(
             "AUDIO_TRANSCRIBE_CACHE_DIR",
-            Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-            / "faster-whisper"
+            Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+            / "audio-transcribe"
             / "models",
         )
     ).expanduser()

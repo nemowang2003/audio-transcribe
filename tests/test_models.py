@@ -26,6 +26,18 @@ def register_in_process(target: Path, model: Path, name: str) -> None:
 
 
 class ModelTests(unittest.TestCase):
+    def test_model_directory_uses_persistent_data_and_preserves_override(self):
+        with patch.dict(
+            "os.environ", {"XDG_DATA_HOME": "/data", "XDG_CACHE_HOME": "/cache"}, clear=True
+        ):
+            self.assertEqual(models.cache_dir(), Path("/data/audio-transcribe/models"))
+            with patch.dict("os.environ", {"AUDIO_TRANSCRIBE_CACHE_DIR": "/custom/models"}):
+                self.assertEqual(models.cache_dir(), Path("/custom/models"))
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(
+                models.cache_dir(), Path.home() / ".local/share/audio-transcribe/models"
+            )
+
     def test_import_reuses_files_without_copy(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

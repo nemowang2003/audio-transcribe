@@ -13,12 +13,17 @@ audio-transcribe models list
 audio-transcribe check
 ```
 
-Models use `${XDG_CACHE_HOME:-~/.cache}/faster-whisper/models`, overridden by
+Models use `${XDG_DATA_HOME:-~/.local/share}/audio-transcribe/models`, overridden by
 `AUDIO_TRANSCRIBE_CACHE_DIR` or `--model-cache`. Imported model aliases are saved
 in `${XDG_CONFIG_HOME:-~/.config}/audio-transcribe/models.json`; files remain in
 place. `--model` also accepts a local directory or a Hugging Face model ID.
 `models list` lists registered aliases; `models check` also resolves downloaded
-models offline. Downloads use the Hugging Face cache, including snapshot revisions.
+models offline. Downloads retain the Hugging Face `blobs` / `snapshots` layout
+inside this persistent model directory, including snapshot revisions.
+To migrate an existing installation, stop active transcriptions and move the whole
+`~/.cache/faster-whisper/models` directory to the new location, preserving links.
+Update any imported aliases in `models.json` that point into the old directory;
+aliases for external model directories remain unchanged. No models are moved automatically.
 
 ```python
 from audio_transcribe import Transcriber
